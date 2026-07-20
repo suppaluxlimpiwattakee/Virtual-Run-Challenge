@@ -11,6 +11,8 @@ alter table public.profiles add column if not exists location text;
 alter table public.profiles add column if not exists education text;
 alter table public.profiles add column if not exists position text;
 alter table public.profiles add column if not exists research_consent boolean not null default false;
+-- Streak rest-day shield: date of the last automatically-forgiven missed day
+alter table public.profiles add column if not exists last_grace_date date;
 
 -- ---------- App settings: landing page content ----------
 alter table public.app_settings add column if not exists promo_video_url text;

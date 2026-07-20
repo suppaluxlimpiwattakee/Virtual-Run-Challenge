@@ -175,9 +175,9 @@ export default async function DashboardPage() {
           <p className="text-2xl font-extrabold text-accent">{totalKm}</p>
           <p className="text-xs font-semibold text-foreground/60">km total</p>
         </div>
-        <div className={stat}>
+        <div className={stat} title="One missed day per week is automatically forgiven">
           <p className="text-2xl font-extrabold text-gold">🔥 {profile.current_streak}</p>
-          <p className="text-xs font-semibold text-foreground/60">day streak</p>
+          <p className="text-xs font-semibold text-foreground/60">day streak 🛡️</p>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3">

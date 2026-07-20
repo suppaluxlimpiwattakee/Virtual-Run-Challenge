@@ -110,7 +110,9 @@ export const DAILY_KM_FLAG_THRESHOLD = 42; // flag (not reject) for admin review
 export const BADGES: Record<string, { label: string; emoji: string; description: string }> = {
   first_log: { label: 'First Steps', emoji: '🎉', description: 'Logged your first entry' },
   streak_7: { label: 'One Week Wonder', emoji: '🔥', description: '7-day logging streak' },
+  streak_14: { label: 'Fortnight Fighter', emoji: '⚡', description: '14-day logging streak' },
   streak_30: { label: 'Habit Hero', emoji: '🏆', description: '30-day logging streak' },
+  streak_60: { label: 'Iron Will', emoji: '💎', description: '60-day logging streak — the whole challenge!' },
   km_50: { label: '50 km Club', emoji: '👟', description: '50 total equivalent km' },
   km_100: { label: 'Century Runner', emoji: '💯', description: '100 total equivalent km' },
   km_200: { label: 'Road Warrior', emoji: '🚀', description: '200 total equivalent km' },

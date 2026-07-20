@@ -31,6 +31,10 @@ export default async function ResultsPage() {
     byKmAll.find((r) => sexByNickname.get(r.nickname) === sex && r.total_km > 0) ?? null;
   const maleChamp = champion('male');
   const femaleChamp = champion('female');
+  const consistencyChamp =
+    [...lb].sort(
+      (a, b) => b.current_streak - a.current_streak || b.logging_days - a.logging_days
+    )[0] ?? null;
 
   const card = 'rounded-2xl bg-white p-5 shadow-sm';
 
@@ -39,7 +43,7 @@ export default async function ResultsPage() {
       {/* Champions podium */}
       <section className={`${card} md:col-span-2 bg-gradient-to-r from-brand/5 to-gold/10`}>
         <h2 className="text-center text-lg font-extrabold">🏆 Challenge champions</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {[
             { label: '1st place — Male', champ: maleChamp },
             { label: '1st place — Female', champ: femaleChamp },
@@ -59,6 +63,25 @@ export default async function ResultsPage() {
               )}
             </div>
           ))}
+          <div className="rounded-2xl bg-white p-5 text-center shadow ring-1 ring-accent/40">
+            <p className="text-xs font-bold uppercase tracking-wide text-foreground/50">
+              Most consistent
+            </p>
+            {consistencyChamp && consistencyChamp.logging_days > 0 ? (
+              <>
+                <p className="mt-1 text-3xl font-extrabold text-accent">
+                  🔥 {consistencyChamp.nickname}
+                </p>
+                <p className="text-sm text-foreground/60">
+                  {nameByNickname.get(consistencyChamp.nickname)} ·{' '}
+                  {consistencyChamp.current_streak}-day streak ·{' '}
+                  {consistencyChamp.logging_days} logging days
+                </p>
+              </>
+            ) : (
+              <p className="mt-2 text-foreground/50">No logs yet</p>
+            )}
+          </div>
         </div>
         <p className="mt-3 text-center text-xs text-foreground/50">
           Every participant receives the souvenir + CME credit for taking part 🎁

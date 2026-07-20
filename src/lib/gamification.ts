@@ -2,7 +2,7 @@
 // run ONLY inside API routes after the caller's session has been verified.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { POINTS } from '@/lib/constants';
-import { addDays, isoWeekKey } from '@/lib/dates';
+import { addDays, daysBetween, isoWeekKey } from '@/lib/dates';
 import type { AppSettings } from '@/lib/types';
 
 type Admin = SupabaseClient;
@@ -146,7 +146,7 @@ export async function updateStreak(
   const newBadges: string[] = [];
   const { data: profile } = await admin
     .from('profiles')
-    .select('current_streak, longest_streak, last_log_date, logging_days')
+    .select('current_streak, longest_streak, last_log_date, logging_days, last_grace_date')
     .eq('user_id', userId)
     .single();
   if (!profile) return newBadges;
@@ -155,10 +155,19 @@ export async function updateStreak(
   if (last === localDate) return newBadges; // already counted today
 
   let streak: number;
+  let graceDate: string | null = profile.last_grace_date ?? null;
   if (last && addDays(last, 1) === localDate) {
     streak = profile.current_streak + 1;
   } else if (last && localDate < last) {
     return newBadges; // backdated log — don't disturb the streak
+  } else if (
+    last &&
+    addDays(last, 2) === localDate &&
+    (!graceDate || daysBetween(graceDate, localDate) > 7)
+  ) {
+    // Rest-day shield: one missed day per rolling week is forgiven
+    streak = profile.current_streak + 1;
+    graceDate = addDays(last, 1); // the forgiven day
   } else {
     streak = 1;
   }
@@ -170,6 +179,7 @@ export async function updateStreak(
       longest_streak: Math.max(streak, profile.longest_streak),
       last_log_date: localDate,
       logging_days: profile.logging_days + 1,
+      last_grace_date: graceDate,
     })
     .eq('user_id', userId);
 
@@ -188,7 +198,9 @@ export async function updateStreak(
   }
 
   if (streak >= 7 && (await awardBadge(admin, userId, 'streak_7'))) newBadges.push('streak_7');
+  if (streak >= 14 && (await awardBadge(admin, userId, 'streak_14'))) newBadges.push('streak_14');
   if (streak >= 30 && (await awardBadge(admin, userId, 'streak_30'))) newBadges.push('streak_30');
+  if (streak >= 60 && (await awardBadge(admin, userId, 'streak_60'))) newBadges.push('streak_60');
   return newBadges;
 }
 
