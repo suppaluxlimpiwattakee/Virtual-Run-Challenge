@@ -5,12 +5,12 @@ import { DAILY_KM_FLAG_THRESHOLD, POINTS, equivalentKm, type ActivityType } from
 import { isValidDateString } from '@/lib/dates';
 import {
   addPoints,
-  addTicket,
+  awardWeeklyTickets,
   checkFirstLogBadge,
   checkKmBadges,
   checkPerfectWeekBadge,
   loadSettings,
-  multiplier,
+  multiplierFor,
   updateStreak,
   validateChallengeDate,
 } from '@/lib/gamification';
@@ -79,15 +79,16 @@ export async function POST(req: NextRequest) {
   if (error || !log)
     return NextResponse.json({ error: 'Could not save the activity.' }, { status: 500 });
 
-  const pointsEarned = Math.round(eqKm * POINTS.PER_EQUIVALENT_KM) * multiplier(settings);
+  const { factor } = await multiplierFor(admin, settings, localDate);
+  const pointsEarned = Math.round(eqKm * POINTS.PER_EQUIVALENT_KM) * factor;
   await addPoints(admin, user.id, pointsEarned, 'exercise', 'exercise_logs', log.id, localDate);
-  await addTicket(admin, user.id, 'exercise', log.id);
 
   const newBadges: string[] = [];
   newBadges.push(...(await checkFirstLogBadge(admin, user.id)));
   newBadges.push(...(await updateStreak(admin, user.id, localDate)));
   newBadges.push(...(await checkKmBadges(admin, user.id)));
   newBadges.push(...(await checkPerfectWeekBadge(admin, user.id, localDate)));
+  const newTickets = await awardWeeklyTickets(admin, user.id, localDate);
 
   return NextResponse.json({
     ok: true,
@@ -95,5 +96,6 @@ export async function POST(req: NextRequest) {
     equivalent_km: eqKm,
     flagged,
     newBadges,
+    newTickets,
   });
 }

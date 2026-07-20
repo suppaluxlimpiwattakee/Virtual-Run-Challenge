@@ -9,8 +9,26 @@ export async function PUT(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
 
-  const { challenge_start_date, challenge_end_date, route_name, route_total_km, double_points } =
-    body;
+  const {
+    challenge_start_date,
+    challenge_end_date,
+    route_name,
+    route_total_km,
+    double_points,
+    promo_video_url,
+    howto_video_url,
+    symposium_reg_url,
+  } = body;
+
+  const cleanUrl = (v: unknown): string | null => {
+    if (typeof v !== 'string' || !v.trim()) return null;
+    try {
+      const u = new URL(v.trim());
+      return u.protocol === 'https:' || u.protocol === 'http:' ? u.toString() : null;
+    } catch {
+      return null;
+    }
+  };
 
   if (!isValidDateString(challenge_start_date) || !isValidDateString(challenge_end_date))
     return NextResponse.json({ error: 'Invalid dates.' }, { status: 400 });
@@ -30,6 +48,9 @@ export async function PUT(req: NextRequest) {
       route_name: route_name.trim(),
       route_total_km: km,
       double_points: double_points === true,
+      promo_video_url: cleanUrl(promo_video_url),
+      howto_video_url: cleanUrl(howto_video_url),
+      symposium_reg_url: cleanUrl(symposium_reg_url),
       updated_at: new Date().toISOString(),
     })
     .eq('id', 1);

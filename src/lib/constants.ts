@@ -8,6 +8,68 @@ export const POINTS = {
   STREAK_BONUS: 20, // every 7 consecutive days with >= 1 log
 } as const;
 
+// Weekly raffle-ticket goals — achievable targets over the 2-month challenge.
+// Each goal awards 1 ticket per calendar week (idempotent via unique index).
+export const TICKET_GOALS = {
+  bp_week: {
+    label: 'BP tracker',
+    description: 'Log your blood pressure on 4+ days this week',
+    daysRequired: 4,
+  },
+  exercise_week: {
+    label: 'Stay active',
+    description: 'Be active on 3+ days (or cover 10+ km) this week',
+    daysRequired: 3,
+    kmAlternative: 10,
+  },
+  weigh_week: {
+    label: 'Weekly weigh-in',
+    description: 'Record your weight once this week',
+  },
+  perfect_week: {
+    label: 'Perfect week',
+    description: 'Hit all three goals in the same week — bonus ticket!',
+  },
+} as const;
+
+export type TicketGoalKey = keyof typeof TICKET_GOALS;
+
+// Registration option lists (NIH-style categories)
+export const RACE_OPTIONS = [
+  'American Indian or Alaska Native',
+  'Asian',
+  'Black or African American',
+  'Native Hawaiian or Other Pacific Islander',
+  'White',
+  'More than one race',
+  'Prefer not to say',
+] as const;
+
+export const ETHNICITY_OPTIONS = [
+  'Hispanic or Latino',
+  'Not Hispanic or Latino',
+  'Prefer not to say',
+] as const;
+
+export const EDUCATION_OPTIONS = [
+  'High school or equivalent',
+  "Associate's degree",
+  "Bachelor's degree",
+  "Master's degree",
+  'Doctorate or professional degree (MD, PhD, etc.)',
+  'Other',
+] as const;
+
+export const POSITION_OPTIONS = [
+  'Physician',
+  'Nurse',
+  'Pharmacist',
+  'Student',
+  'Researcher',
+  'Allied health professional',
+  'Other',
+] as const;
+
 // Non-running activity → equivalent km
 export const CONVERSIONS = {
   run: { factor: 1, label: 'Run', detail: '1 km = 1 km' },

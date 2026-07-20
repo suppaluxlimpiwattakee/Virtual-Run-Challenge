@@ -9,6 +9,12 @@ export interface Profile {
   occupation: string | null;
   institution: string | null;
   contact: string | null;
+  race: string | null;
+  ethnicity: string | null;
+  location: string | null;
+  education: string | null;
+  position: string | null;
+  research_consent: boolean;
   consent_at: string;
   is_admin: boolean;
   current_streak: number;
@@ -64,7 +70,19 @@ export interface AppSettings {
   route_name: string;
   route_total_km: number;
   double_points: boolean;
+  promo_video_url: string | null;
+  howto_video_url: string | null;
+  symposium_reg_url: string | null;
   updated_at: string;
+}
+
+export interface PointEvent {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  multiplier: number;
+  created_at: string;
 }
 
 export interface LeaderboardRow {

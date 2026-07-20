@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { HEIGHT_LIMITS, WEIGHT_LIMITS } from '@/lib/constants';
+import {
+  EDUCATION_OPTIONS,
+  ETHNICITY_OPTIONS,
+  HEIGHT_LIMITS,
+  POSITION_OPTIONS,
+  RACE_OPTIONS,
+  WEIGHT_LIMITS,
+} from '@/lib/constants';
 import { isValidDateString } from '@/lib/dates';
 
 export async function POST(req: NextRequest) {
@@ -21,10 +28,15 @@ export async function POST(req: NextRequest) {
     sex,
     height_cm,
     weight_kg_baseline,
-    occupation,
+    position,
+    education,
+    race,
+    ethnicity,
+    location,
     institution,
     contact,
     consent,
+    research_consent,
   } = body;
 
   // ---- Server-side validation ----
@@ -50,6 +62,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Height must be 90–250 cm.' }, { status: 400 });
   if (!Number.isFinite(w) || w < WEIGHT_LIMITS.min || w > WEIGHT_LIMITS.max)
     return NextResponse.json({ error: 'Weight must be 25–300 kg.' }, { status: 400 });
+  if (!POSITION_OPTIONS.includes(position))
+    return NextResponse.json({ error: 'Please select your position.' }, { status: 400 });
+  if (!EDUCATION_OPTIONS.includes(education))
+    return NextResponse.json({ error: 'Please select your education level.' }, { status: 400 });
+  if (!RACE_OPTIONS.includes(race))
+    return NextResponse.json({ error: 'Please select a race option.' }, { status: 400 });
+  if (!ETHNICITY_OPTIONS.includes(ethnicity))
+    return NextResponse.json({ error: 'Please select an ethnicity option.' }, { status: 400 });
 
   const admin = createAdminClient();
 
@@ -69,9 +89,14 @@ export async function POST(req: NextRequest) {
     sex,
     height_cm: h,
     weight_kg_baseline: w,
-    occupation: typeof occupation === 'string' ? occupation.trim() || null : null,
+    position,
+    education,
+    race,
+    ethnicity,
+    location: typeof location === 'string' ? location.trim() || null : null,
     institution: typeof institution === 'string' ? institution.trim() || null : null,
     contact: typeof contact === 'string' ? contact.trim() || null : null,
+    research_consent: research_consent === true,
     consent_at: new Date().toISOString(),
     is_admin: false,
   });

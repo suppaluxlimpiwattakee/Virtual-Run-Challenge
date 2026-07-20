@@ -7,7 +7,11 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     try {
-      const tls = await import('node:tls');
+      // Cast: these APIs exist in Node 22.15+/24 but @types/node@20 lacks them
+      const tls = (await import('node:tls')) as unknown as {
+        getCACertificates(type?: 'default' | 'system' | 'bundled' | 'extra'): string[];
+        setDefaultCACertificates(certs: string[]): void;
+      };
       const fs = await import('node:fs');
       const path = await import('node:path');
 

@@ -5,11 +5,11 @@ import { POINTS, WEIGHT_LIMITS } from '@/lib/constants';
 import { isValidDateString, isoWeekKey } from '@/lib/dates';
 import {
   addPoints,
-  addTicket,
+  awardWeeklyTickets,
   checkFirstLogBadge,
   checkPerfectWeekBadge,
   loadSettings,
-  multiplier,
+  multiplierFor,
   updateStreak,
   validateChallengeDate,
 } from '@/lib/gamification';
@@ -65,13 +65,20 @@ export async function POST(req: NextRequest) {
   let pointsEarned = 0;
   const newBadges: string[] = [];
   if (isScoring) {
-    pointsEarned = POINTS.PER_WEIGH_IN * multiplier(settings);
+    const { factor } = await multiplierFor(admin, settings, localDate);
+    pointsEarned = POINTS.PER_WEIGH_IN * factor;
     await addPoints(admin, user.id, pointsEarned, 'weigh_in', 'weight_logs', log.id, localDate);
-    await addTicket(admin, user.id, 'weigh_in', log.id);
     newBadges.push(...(await checkFirstLogBadge(admin, user.id)));
     newBadges.push(...(await updateStreak(admin, user.id, localDate)));
     newBadges.push(...(await checkPerfectWeekBadge(admin, user.id, localDate)));
   }
+  const newTickets = await awardWeeklyTickets(admin, user.id, localDate);
 
-  return NextResponse.json({ ok: true, points: pointsEarned, scoring: isScoring, newBadges });
+  return NextResponse.json({
+    ok: true,
+    points: pointsEarned,
+    scoring: isScoring,
+    newBadges,
+    newTickets,
+  });
 }

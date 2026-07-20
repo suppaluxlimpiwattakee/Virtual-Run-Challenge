@@ -2,6 +2,12 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  EDUCATION_OPTIONS,
+  ETHNICITY_OPTIONS,
+  POSITION_OPTIONS,
+  RACE_OPTIONS,
+} from '@/lib/constants';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -12,10 +18,15 @@ export default function RegisterPage() {
     sex: '',
     height_cm: '',
     weight_kg_baseline: '',
-    occupation: '',
+    position: '',
+    education: '',
+    race: '',
+    ethnicity: '',
+    location: '',
     institution: '',
     contact: '',
     consent: false,
+    research_consent: false,
   });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -122,10 +133,54 @@ export default function RegisterPage() {
           </div>
         )}
 
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={label}>Position *</label>
+            <select required className={input} value={form.position}
+              onChange={(e) => set('position', e.target.value)}>
+              <option value="">Select…</option>
+              {POSITION_OPTIONS.map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={label}>Education *</label>
+            <select required className={input} value={form.education}
+              onChange={(e) => set('education', e.target.value)}>
+              <option value="">Select…</option>
+              {EDUCATION_OPTIONS.map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={label}>Race *</label>
+            <select required className={input} value={form.race}
+              onChange={(e) => set('race', e.target.value)}>
+              <option value="">Select…</option>
+              {RACE_OPTIONS.map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={label}>Ethnicity *</label>
+            <select required className={input} value={form.ethnicity}
+              onChange={(e) => set('ethnicity', e.target.value)}>
+              <option value="">Select…</option>
+              {ETHNICITY_OPTIONS.map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          </div>
+        </div>
         <div>
-          <label className={label}>Occupation</label>
-          <input className={input} value={form.occupation}
-            onChange={(e) => set('occupation', e.target.value)} />
+          <label className={label}>City / location</label>
+          <input className={input} value={form.location} placeholder="Irvine, CA"
+            onChange={(e) => set('location', e.target.value)} />
         </div>
         <div>
           <label className={label}>Institution / workplace</label>
@@ -140,7 +195,7 @@ export default function RegisterPage() {
         </div>
 
         <div className="rounded-xl border border-black/10 bg-white p-4 text-xs leading-relaxed text-foreground/70">
-          <p className="mb-2 text-sm font-bold text-foreground">Privacy notice</p>
+          <p className="mb-2 text-sm font-bold text-foreground">Consent</p>
           <p>
             We collect the details on this form plus your blood pressure, exercise, and weight logs
             to run this challenge. Your health data and personal details are visible only to you
@@ -153,6 +208,18 @@ export default function RegisterPage() {
               onChange={(e) => set('consent', e.target.checked)} />
             <span>I have read the notice and consent to my health data being collected for this
               challenge. *</span>
+          </label>
+          <p className="mt-4">
+            <strong>Research use (optional):</strong> your blood pressure readings and demographic
+            information may also be used, in de-identified form, for future research. Your name and
+            contact details will <strong>never</strong> be exposed or published — analyses use
+            anonymized data only. You may participate in the challenge without agreeing to this.
+          </p>
+          <label className="mt-2 flex items-start gap-2 text-sm text-foreground">
+            <input type="checkbox" className="mt-1 h-4 w-4 accent-brand"
+              checked={form.research_consent}
+              onChange={(e) => set('research_consent', e.target.checked)} />
+            <span>I agree that my de-identified data may be used for future research.</span>
           </label>
         </div>
 

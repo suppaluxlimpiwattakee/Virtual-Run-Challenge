@@ -1,6 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin';
 
+/** Wheel data: every eligible entrant with their ticket count. */
+export async function GET() {
+  const { admin } = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const [{ data: tickets }, { data: previous }] = await Promise.all([
+    admin.from('raffle_tickets').select('user_id'),
+    admin.from('raffle_draws').select('winner_user_id'),
+  ]);
+  const excluded = new Set((previous ?? []).map((p) => p.winner_user_id));
+
+  const counts = new Map<string, number>();
+  for (const t of tickets ?? []) {
+    if (excluded.has(t.user_id)) continue;
+    counts.set(t.user_id, (counts.get(t.user_id) ?? 0) + 1);
+  }
+
+  const { data: profiles } = await admin
+    .from('profiles')
+    .select('user_id, nickname')
+    .in('user_id', [...counts.keys()]);
+
+  const entrants = (profiles ?? [])
+    .map((p) => ({ nickname: p.nickname, tickets: counts.get(p.user_id) ?? 0 }))
+    .sort((a, b) => a.nickname.localeCompare(b.nickname));
+
+  return NextResponse.json({
+    entrants,
+    totalTickets: entrants.reduce((s, e) => s + e.tickets, 0),
+  });
+}
+
 /**
  * Draws winner(s) weighted by ticket count. Body: { count?: number, prize?: string,
  * excludePrevious?: boolean }. Returns nicknames + ticket counts for the reveal.

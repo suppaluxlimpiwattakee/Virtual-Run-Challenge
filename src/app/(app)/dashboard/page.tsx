@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getUserAndProfile, getSettings } from '@/lib/auth';
-import { BADGES, BP_TARGET, FINAL_SPRINT_DAYS } from '@/lib/constants';
-import { daysBetween, isoWeekKey } from '@/lib/dates';
+import { BADGES, BP_TARGET, FINAL_SPRINT_DAYS, TICKET_GOALS } from '@/lib/constants';
+import { addDays, daysBetween, isoWeekKey } from '@/lib/dates';
 import { BPTrendChart, WeightTrendChart, type BpWeekPoint, type WeightPoint } from '@/components/Charts';
 import type { LeaderboardRow } from '@/lib/types';
 
@@ -64,6 +64,57 @@ export default async function DashboardPage() {
 
   // Challenge arc
   const today = new Date().toISOString().slice(0, 10);
+
+  // This week's ticket goals (Mon–Sun window containing today)
+  const dow = new Date(today + 'T00:00:00Z').getUTCDay() || 7;
+  const monday = addDays(today, 1 - dow);
+  const sunday = addDays(monday, 6);
+  const thisWeekKey = isoWeekKey(today);
+  const bpDaysThisWeek = new Set(
+    (bpRes.data ?? []).filter((r) => r.local_date >= monday && r.local_date <= sunday)
+      .map((r) => r.local_date)
+  ).size;
+  const { data: exWeek } = await supabase
+    .from('exercise_logs')
+    .select('local_date, equivalent_km')
+    .eq('user_id', user.id)
+    .gte('local_date', monday)
+    .lte('local_date', sunday);
+  const exDaysThisWeek = new Set((exWeek ?? []).map((r) => r.local_date)).size;
+  const exKmThisWeek = (exWeek ?? []).reduce((s, r) => s + Number(r.equivalent_km), 0);
+  const { data: wtWeek } = await supabase
+    .from('weight_logs')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('iso_week', thisWeekKey)
+    .limit(1);
+  const goalStatus = [
+    {
+      key: 'bp_week',
+      met: bpDaysThisWeek >= 4,
+      progress: `${Math.min(bpDaysThisWeek, 4)}/4 days`,
+    },
+    {
+      key: 'exercise_week',
+      met: exDaysThisWeek >= 3 || exKmThisWeek >= 10,
+      progress:
+        exDaysThisWeek >= 3 || exKmThisWeek >= 10
+          ? 'done'
+          : `${exDaysThisWeek}/3 days · ${Math.round(exKmThisWeek * 10) / 10}/10 km`,
+    },
+    { key: 'weigh_week', met: (wtWeek?.length ?? 0) > 0, progress: (wtWeek?.length ?? 0) > 0 ? 'done' : '0/1' },
+  ] as const;
+  const perfectMet = goalStatus.every((g) => g.met);
+
+  // Active point event banner
+  const { data: activeEvents } = await supabase
+    .from('point_events')
+    .select('name, multiplier')
+    .lte('start_date', today)
+    .gte('end_date', today)
+    .order('multiplier', { ascending: false })
+    .limit(1);
+  const activeEvent = activeEvents?.[0] ?? null;
   const daysLeft = settings ? Math.max(0, daysBetween(today, settings.challenge_end_date)) : null;
   const totalDays = settings
     ? daysBetween(settings.challenge_start_date, settings.challenge_end_date)
@@ -78,7 +129,12 @@ export default async function DashboardPage() {
   return (
     <main className="space-y-5 px-5 py-5">
       {/* Challenge arc banners */}
-      {settings?.double_points && (
+      {activeEvent && (
+        <div className="animate-pop-in rounded-2xl bg-gradient-to-r from-brand to-gold px-4 py-3 text-center text-sm font-extrabold text-white shadow">
+          ⚡ {activeEvent.name} — ×{activeEvent.multiplier} points right now!
+        </div>
+      )}
+      {settings?.double_points && !activeEvent && (
         <div className="animate-pop-in rounded-2xl bg-gold px-4 py-3 text-center text-sm font-extrabold text-white shadow">
           ⚡ DOUBLE POINTS are ON — everything counts twice right now!
         </div>
@@ -139,6 +195,32 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* Weekly ticket goals */}
+      <section className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold">🎟️ This week&apos;s ticket goals</h2>
+          <span className="text-xs text-foreground/50">1 raffle ticket each</span>
+        </div>
+        <ul className="mt-3 space-y-2">
+          {goalStatus.map((g) => (
+            <li key={g.key} className="flex items-center justify-between text-sm">
+              <span className={g.met ? 'text-foreground' : 'text-foreground/60'}>
+                {g.met ? '✅' : '⬜'} {TICKET_GOALS[g.key].description}
+              </span>
+              <span className={`text-xs font-bold ${g.met ? 'text-accent' : 'text-foreground/40'}`}>
+                {g.met ? '+1 🎟️' : g.progress}
+              </span>
+            </li>
+          ))}
+          <li className="flex items-center justify-between border-t border-black/5 pt-2 text-sm">
+            <span className={perfectMet ? 'font-bold' : 'text-foreground/60'}>
+              {perfectMet ? '⭐' : '⬜'} {TICKET_GOALS.perfect_week.description}
+            </span>
+            {perfectMet && <span className="text-xs font-bold text-gold">+1 🎟️</span>}
+          </li>
+        </ul>
+      </section>
+
       {/* BP trend */}
       <section className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between">
@@ -189,6 +271,14 @@ export default async function DashboardPage() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* My data */}
+      <section className="pb-2 text-center">
+        <a href="/api/me/export"
+          className="inline-block rounded-full bg-white px-5 py-2.5 text-sm font-semibold shadow-sm ring-1 ring-black/10">
+          ⬇️ Download all my data (CSV)
+        </a>
       </section>
     </main>
   );

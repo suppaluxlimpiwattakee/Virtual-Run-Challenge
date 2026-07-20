@@ -25,8 +25,30 @@ export function validateChallengeDate(localDate: string, settings: AppSettings):
   return null;
 }
 
-export function multiplier(settings: AppSettings): number {
-  return settings.double_points ? 2 : 1;
+/**
+ * Point multiplier: the admin's manual double-points toggle, or the largest
+ * scheduled point event covering this date (e.g. "Mid-point Boost Weekend").
+ */
+export async function multiplierFor(
+  admin: Admin,
+  settings: AppSettings,
+  localDate: string
+): Promise<{ factor: number; eventName: string | null }> {
+  let factor = settings.double_points ? 2 : 1;
+  let eventName: string | null = settings.double_points ? 'Double points active' : null;
+
+  const { data: events } = await admin
+    .from('point_events')
+    .select('name, multiplier')
+    .lte('start_date', localDate)
+    .gte('end_date', localDate)
+    .order('multiplier', { ascending: false })
+    .limit(1);
+  if (events?.length && events[0].multiplier > factor) {
+    factor = events[0].multiplier;
+    eventName = events[0].name;
+  }
+  return { factor, eventName };
 }
 
 export async function addPoints(
@@ -49,8 +71,61 @@ export async function addPoints(
   });
 }
 
-export async function addTicket(admin: Admin, userId: string, source: string, refId: string) {
-  await admin.from('raffle_tickets').insert({ user_id: userId, source, ref_id: refId });
+/**
+ * Weekly-goal raffle tickets. Called after every log: checks which weekly
+ * goals the user has now met for the log's ISO week and awards one ticket per
+ * goal (idempotent — unique index on user/week/goal). Returns newly earned
+ * goal keys so the UI can celebrate.
+ */
+export async function awardWeeklyTickets(
+  admin: Admin,
+  userId: string,
+  localDate: string
+): Promise<string[]> {
+  const week = isoWeekKey(localDate);
+  const d = new Date(localDate + 'T00:00:00Z');
+  const dow = d.getUTCDay() || 7;
+  const monday = addDays(localDate, 1 - dow);
+  const sunday = addDays(monday, 6);
+
+  const [bp, ex, wt] = await Promise.all([
+    admin
+      .from('bp_logs')
+      .select('local_date')
+      .eq('user_id', userId)
+      .gte('local_date', monday)
+      .lte('local_date', sunday),
+    admin
+      .from('exercise_logs')
+      .select('local_date, equivalent_km')
+      .eq('user_id', userId)
+      .gte('local_date', monday)
+      .lte('local_date', sunday),
+    admin.from('weight_logs').select('id').eq('user_id', userId).eq('iso_week', week).limit(1),
+  ]);
+
+  const bpDays = new Set((bp.data ?? []).map((r) => r.local_date)).size;
+  const exDays = new Set((ex.data ?? []).map((r) => r.local_date)).size;
+  const exKm = (ex.data ?? []).reduce((s, r) => s + Number(r.equivalent_km), 0);
+  const weighed = (wt.data?.length ?? 0) > 0;
+
+  const met: string[] = [];
+  if (bpDays >= 4) met.push('bp_week');
+  if (exDays >= 3 || exKm >= 10) met.push('exercise_week');
+  if (weighed) met.push('weigh_week');
+  if (met.length === 3) met.push('perfect_week');
+
+  const earned: string[] = [];
+  for (const goal of met) {
+    const { error } = await admin.from('raffle_tickets').insert({
+      user_id: userId,
+      source: goal,
+      iso_week: week,
+      goal_key: goal,
+    });
+    if (!error) earned.push(goal); // unique-index violation → already earned
+  }
+  return earned;
 }
 
 export async function awardBadge(admin: Admin, userId: string, badgeKey: string): Promise<boolean> {

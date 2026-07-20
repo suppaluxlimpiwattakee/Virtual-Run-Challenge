@@ -5,12 +5,12 @@ import { BP_LIMITS, POINTS } from '@/lib/constants';
 import { isValidDateString } from '@/lib/dates';
 import {
   addPoints,
-  addTicket,
+  awardWeeklyTickets,
   checkBpImproverBadge,
   checkFirstLogBadge,
   checkPerfectWeekBadge,
   loadSettings,
-  multiplier,
+  multiplierFor,
   updateStreak,
   validateChallengeDate,
 } from '@/lib/gamification';
@@ -83,14 +83,21 @@ export async function POST(req: NextRequest) {
   let pointsEarned = 0;
   const newBadges: string[] = [];
   if (isScoring) {
-    pointsEarned = POINTS.PER_BP_LOG * multiplier(settings);
+    const { factor } = await multiplierFor(admin, settings, localDate);
+    pointsEarned = POINTS.PER_BP_LOG * factor;
     await addPoints(admin, user.id, pointsEarned, 'bp_log', 'bp_logs', log.id, localDate);
-    await addTicket(admin, user.id, 'bp_log', log.id);
     newBadges.push(...(await checkFirstLogBadge(admin, user.id)));
     newBadges.push(...(await updateStreak(admin, user.id, localDate)));
     newBadges.push(...(await checkPerfectWeekBadge(admin, user.id, localDate)));
   }
   newBadges.push(...(await checkBpImproverBadge(admin, user.id, localDate)));
+  const newTickets = await awardWeeklyTickets(admin, user.id, localDate);
 
-  return NextResponse.json({ ok: true, points: pointsEarned, scoring: isScoring, newBadges });
+  return NextResponse.json({
+    ok: true,
+    points: pointsEarned,
+    scoring: isScoring,
+    newBadges,
+    newTickets,
+  });
 }
