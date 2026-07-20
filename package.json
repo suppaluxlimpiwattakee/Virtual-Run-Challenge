@@ -1,0 +1,38 @@
+{
+  "name": "virtual-run-challenge",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=--use-system-ca NODE_EXTRA_CA_CERTS=./certs/norton-ca.pem next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "seed": "cross-env NODE_OPTIONS=--use-system-ca NODE_EXTRA_CA_CERTS=./certs/norton-ca.pem tsx scripts/seed.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.2",
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.7",
+    "canvas-confetti": "^1.9.4",
+    "date-fns": "^4.4.0",
+    "next": "16.2.10",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.9.2",
+    "undici": "^8.7.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.4.2",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.1",
+    "typescript": "^5"
+  }
+}
