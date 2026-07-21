@@ -51,3 +51,19 @@ create unique index if not exists raffle_tickets_goal_unique
 
 -- Remove legacy per-log tickets so everyone starts fair under the new rules
 delete from public.raffle_tickets where goal_key is null;
+
+-- ---------- Access codes (symposium payment gate) ----------
+-- One-time codes distributed to paid symposium registrants; required to join.
+create table if not exists public.access_codes (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,
+  note text, -- batch label, e.g. 'Early bird 2026'
+  used_by uuid references public.profiles(user_id) on delete set null,
+  used_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table public.access_codes enable row level security;
+drop policy if exists "codes_admin_select" on public.access_codes;
+create policy "codes_admin_select" on public.access_codes
+  for select using (public.is_admin());

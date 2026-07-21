@@ -12,6 +12,7 @@ import {
 export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState({
+    access_code: '',
     full_name: '',
     nickname: '',
     dob: '',
@@ -81,6 +82,16 @@ export default function RegisterPage() {
       </div>
 
       <form onSubmit={submit} className="mt-8 space-y-4">
+        <div className="rounded-xl border-2 border-brand/30 bg-brand/5 p-4">
+          <label className={label}>Access code *</label>
+          <input required className={input + ' font-mono uppercase tracking-widest'}
+            value={form.access_code} placeholder="XXXX-XXXX" maxLength={9}
+            onChange={(e) => set('access_code', e.target.value.toUpperCase())} />
+          <p className="mt-1.5 text-xs text-foreground/60">
+            The challenge is included with your symposium registration — your access code is in
+            your registration confirmation. Can&apos;t find it? Contact the organizers.
+          </p>
+        </div>
         <div>
           <label className={label}>Full name *</label>
           <input required className={input} value={form.full_name}

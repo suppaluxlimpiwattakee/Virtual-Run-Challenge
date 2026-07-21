@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
   if (!body) return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
 
   const {
+    access_code,
     full_name,
     nickname,
     dob,
@@ -82,6 +83,33 @@ export async function POST(req: NextRequest) {
   if (existing)
     return NextResponse.json({ error: 'You are already registered.' }, { status: 409 });
 
+  // ---- Access code gate (symposium payment verification) ----
+  const code = typeof access_code === 'string' ? access_code.trim().toUpperCase() : '';
+  if (!/^[A-Z2-9]{4}-?[A-Z2-9]{4}$/.test(code))
+    return NextResponse.json(
+      { error: 'Please enter your access code (format: XXXX-XXXX).' },
+      { status: 400 }
+    );
+  const normalized = code.includes('-') ? code : `${code.slice(0, 4)}-${code.slice(4)}`;
+
+  // Atomic claim: only succeeds if the code exists AND is still unused.
+  // (used_by references profiles, so we stamp user linkage after insert.)
+  const { data: claimed } = await admin
+    .from('access_codes')
+    .update({ used_at: new Date().toISOString() })
+    .eq('code', normalized)
+    .is('used_at', null)
+    .select('id')
+    .maybeSingle();
+  if (!claimed)
+    return NextResponse.json(
+      { error: 'That access code is invalid or has already been used. Check your registration confirmation or contact the organizers.' },
+      { status: 400 }
+    );
+
+  const releaseCode = () =>
+    admin.from('access_codes').update({ used_at: null, used_by: null }).eq('id', claimed.id);
+
   const { error } = await admin.from('profiles').insert({
     user_id: user.id,
     full_name: full_name.trim(),
@@ -104,6 +132,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (error) {
+    await releaseCode(); // give the code back so they can retry
     if (error.code === '23505')
       return NextResponse.json(
         { error: 'That nickname is taken — try another one.' },
@@ -111,6 +140,9 @@ export async function POST(req: NextRequest) {
       );
     return NextResponse.json({ error: 'Registration failed. Try again.' }, { status: 500 });
   }
+
+  // Link the claimed code to the new profile for the admin ledger
+  await admin.from('access_codes').update({ used_by: user.id }).eq('id', claimed.id);
 
   return NextResponse.json({ ok: true });
 }
