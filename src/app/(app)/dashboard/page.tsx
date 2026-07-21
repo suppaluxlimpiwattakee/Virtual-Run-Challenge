@@ -5,6 +5,7 @@ import { getUserAndProfile, getSettings } from '@/lib/auth';
 import { BADGES, BP_TARGET, FINAL_SPRINT_DAYS, TICKET_GOALS } from '@/lib/constants';
 import { addDays, daysBetween, isoWeekKey } from '@/lib/dates';
 import { BPTrendChart, WeightTrendChart, type BpWeekPoint, type WeightPoint } from '@/components/Charts';
+import { ReminderToggle } from '@/components/ReminderToggle';
 import type { LeaderboardRow } from '@/lib/types';
 
 export default async function DashboardPage() {
@@ -273,7 +274,8 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* My data */}
+      {/* Preferences + my data */}
+      <ReminderToggle initial={profile.email_reminders ?? false} />
       <section className="pb-2 text-center">
         <a href="/api/me/export"
           className="inline-block rounded-full bg-white px-5 py-2.5 text-sm font-semibold shadow-sm ring-1 ring-black/10">

@@ -170,6 +170,10 @@ export async function updateStreak(
     graceDate = addDays(last, 1); // the forgiven day
   } else {
     streak = 1;
+    // Comeback badge: returned after a real break (3+ days away)
+    if (last && daysBetween(last, localDate) >= 3) {
+      if (await awardBadge(admin, userId, 'comeback')) newBadges.push('comeback');
+    }
   }
 
   await admin

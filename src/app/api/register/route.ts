@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
     contact,
     consent,
     research_consent,
+    email_reminders,
   } = body;
 
   // ---- Server-side validation ----
@@ -97,6 +98,7 @@ export async function POST(req: NextRequest) {
     institution: typeof institution === 'string' ? institution.trim() || null : null,
     contact: typeof contact === 'string' ? contact.trim() || null : null,
     research_consent: research_consent === true,
+    email_reminders: email_reminders === true,
     consent_at: new Date().toISOString(),
     is_admin: false,
   });

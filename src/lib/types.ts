@@ -15,6 +15,8 @@ export interface Profile {
   education: string | null;
   position: string | null;
   research_consent: boolean;
+  email_reminders: boolean;
+  last_reminder_at: string | null;
   consent_at: string;
   is_admin: boolean;
   current_streak: number;

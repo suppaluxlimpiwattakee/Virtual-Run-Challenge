@@ -117,6 +117,7 @@ export const BADGES: Record<string, { label: string; emoji: string; description:
   km_100: { label: 'Century Runner', emoji: '💯', description: '100 total equivalent km' },
   km_200: { label: 'Road Warrior', emoji: '🚀', description: '200 total equivalent km' },
   bp_improver: { label: 'BP Improver', emoji: '❤️', description: '4-week average systolic dropped ≥ 5 mmHg' },
+  comeback: { label: 'Back on Track', emoji: '💪', description: 'Returned after a break — showing up again is what counts!' },
   perfect_week: { label: 'Perfect Week', emoji: '⭐', description: 'BP + exercise + weigh-in all in one week' },
 };
 

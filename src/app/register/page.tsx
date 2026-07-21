@@ -27,6 +27,7 @@ export default function RegisterPage() {
     contact: '',
     consent: false,
     research_consent: false,
+    email_reminders: false,
   });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -222,6 +223,16 @@ export default function RegisterPage() {
             <span>I agree that my de-identified data may be used for future research.</span>
           </label>
         </div>
+
+        <label className="flex items-start gap-2 rounded-xl border border-black/10 bg-white p-4 text-sm">
+          <input type="checkbox" className="mt-1 h-4 w-4 accent-brand"
+            checked={form.email_reminders}
+            onChange={(e) => set('email_reminders', e.target.checked)} />
+          <span>
+            <strong>📧 Email me a friendly reminder</strong> if I haven&apos;t logged for a few
+            days (max one per week — you can turn this off anytime from your dashboard).
+          </span>
+        </label>
 
         {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
