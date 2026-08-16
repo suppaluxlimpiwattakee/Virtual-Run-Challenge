@@ -62,6 +62,7 @@ export default async function LeaderboardPage() {
   const lb = (lbRes.data ?? []) as LeaderboardRow[];
   const progress = progressRes.data?.[0] as { total_km: number; participants: number } | undefined;
 
+  const byPoints = [...lb].sort((a, b) => b.total_points - a.total_points);
   const byKm = [...lb].sort((a, b) => b.total_km - a.total_km);
   const byConsistency = [...lb].sort(
     (a, b) => b.current_streak - a.current_streak || b.logging_days - a.logging_days
@@ -80,6 +81,14 @@ export default async function LeaderboardPage() {
         />
       )}
 
+      <Board
+        title="⭐ Overall points"
+        subtitle="Everything combined — distance, BP logs, weigh-ins and streak bonuses"
+        rows={byPoints}
+        me={profile.nickname}
+        value={(r) => r.total_points}
+        unit="pts"
+      />
       <Board
         title="🏃 Distance"
         subtitle="Total equivalent kilometers"
