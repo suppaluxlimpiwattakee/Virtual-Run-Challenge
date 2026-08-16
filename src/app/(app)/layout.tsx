@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { getUserAndProfile } from '@/lib/auth';
 import { BottomNav } from '@/components/BottomNav';
 
+// Participant pages are per-user and live — never pre-render at build time.
+export const dynamic = 'force-dynamic';
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, profile } = await getUserAndProfile();
   if (!user) redirect('/login');

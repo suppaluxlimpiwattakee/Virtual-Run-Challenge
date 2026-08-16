@@ -4,6 +4,9 @@ import { getUserAndProfile } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { AppSettings } from '@/lib/types';
 
+// Reads the session and live admin settings — render per request.
+export const dynamic = 'force-dynamic';
+
 /** Accepts youtube.com/watch?v=, youtu.be/, shorts/, or plain embed URLs. */
 function toEmbedUrl(url: string): string | null {
   try {

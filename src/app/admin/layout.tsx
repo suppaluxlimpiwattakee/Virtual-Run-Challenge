@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getUserAndProfile } from '@/lib/auth';
 
+// Admin pages read live data per request — never pre-render at build time.
+export const dynamic = 'force-dynamic';
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // Server-side check against the DB — the is_admin flag can only be set
   // directly in Supabase, never through the app.
